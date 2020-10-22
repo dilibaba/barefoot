@@ -25,11 +25,11 @@ then
 	mode=$6
 elif [ "$#" -eq "0" ]
 then
-	input=/mnt/map/osm/oberbayern.osm.pbf
-	database=oberbayern
-	user=osmuser
-	password=pass
-	config=/mnt/map/tools/road-types.json
+	input=./xiamen.osm
+	database=xiamen
+	user=xiamen
+	password=xiamen
+	config=../tools/road-types.json
 	mode=slim
 else
 	echo "Error. Say '$0 osm-file database user password bfmap-config slim|normal' or run with defaults '$0'."
@@ -54,26 +54,26 @@ fi
 echo "Done."
 
 echo "Start population of OSM data (osmosis) ..."
-psql -h localhost -d ${database} -U ${user} -f /mnt/map/osm/pgsnapshot_schema_0.6.sql
-rm -rf /mnt/map/osm/tmp
-mkdir /mnt/map/osm/tmp
+psql -h localhost -d ${database} -U ${user} -f ./pgsnapshot_schema_0.6.sql
+rm -rf ./tmp
+mkdir ./tmp
 if [ -z "${JAVACMD_OPTIONS:-}" ]; then
-    JAVACMD_OPTIONS="-Djava.io.tmpdir=/mnt/map/osm/tmp"
+    JAVACMD_OPTIONS="-Djava.io.tmpdir=./tmp"
 else
-    JAVACMD_OPTIONS="$JAVACMD_OPTIONS -Djava.io.tmpdir=/mnt/map/osm/tmp"
+    JAVACMD_OPTIONS="$JAVACMD_OPTIONS -Djava.io.tmpdir=./tmp"
 fi
 export JAVACMD_OPTIONS
-osmosis --read-pbf file=${input} --tf accept-ways highway=* --write-pgsql user="${user}" password="${password}" database="${database}"
+osmosis --read-xml file=${input} --tf accept-ways highway=* --write-pgsql user="${user}" password="${password}" database="${database}"
 echo "Done."
 
 echo "Start extraction of routing data (bfmap tools) ..."
-cd /mnt/map/tools/
+cd ../tools/
 if [ "$mode" = "slim" ]
 then
-	python osm2ways.py --host localhost --port 5432 --database ${database} --table temp_ways --user ${user} --password ${password} --slim
+	python2 osm2ways.py --host localhost --port 5432 --database ${database} --table temp_ways --user ${user} --password ${password} --slim
 elif [ "$mode" = "normal" ]
 then
-	python osm2ways.py --host localhost --port 5432 --database ${database} --table temp_ways --user ${user} --password ${password} --prefix _tmp
+	python2 osm2ways.py --host localhost --port 5432 --database ${database} --table temp_ways --user ${user} --password ${password} --prefix _tmp
 fi
-python ways2bfmap.py --source-host localhost --source-port 5432 --source-database ${database} --source-table temp_ways --source-user ${user} --source-password ${password} --target-host localhost --target-port 5432 --target-database ${database} --target-table bfmap_ways --target-user ${user} --target-password ${password} --config ${config}
+python2 ways2bfmap.py --source-host localhost --source-port 5432 --source-database ${database} --source-table temp_ways --source-user ${user} --source-password ${password} --target-host localhost --target-port 5432 --target-database ${database} --target-table bfmap_ways --target-user ${user} --target-password ${password} --config ${config}
 echo "Done."

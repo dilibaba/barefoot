@@ -47,11 +47,11 @@ for sample in samples:
     if isinstance(sample['time'], (int, long)):
         current = time.mktime(datetime.datetime.fromtimestamp(sample['time'] / 1000).timetuple())
     else:
-        current = time.mktime(datetime.datetime.strptime(sample['time'][:-5], "%Y-%m-%d %H:%M:%S").timetuple())
+        current = time.mktime(datetime.datetime.strptime(sample['time'], "%Y-%m-%d %H:%M:%S").timetuple())
     if options.step == True:
         raw_input("Press Enter to continue...")
     elif previous != None:
-        time.sleep(current - previous)
+        time.sleep(1)
     previous = current
     print(json.dumps(sample))
     subprocess.call("echo '%s' | netcat %s %s" % (json.dumps(sample), options.host, options.port), shell=True)

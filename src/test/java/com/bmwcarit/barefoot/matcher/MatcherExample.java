@@ -19,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.esri.core.geometry.Point;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.Ignore;
@@ -48,7 +49,7 @@ public class MatcherExample {
     @Test
     public void offline() throws IOException, JSONException {
         // Load and construct road map
-        RoadMap map = Loader.roadmap("config/oberbayern.properties", true).construct();
+        RoadMap map = Loader.roadmap("config/xiamen.properties", true).construct();
 
         // Instantiate matcher and state data structure
         Matcher matcher = new Matcher(map, new Dijkstra<Road, RoadPoint>(), new TimePriority(),
@@ -56,7 +57,7 @@ public class MatcherExample {
 
         // Input as sample batch (offline) or sample stream (online)
         List<MatcherSample> samples =
-                readSamples(ServerTest.class.getResource("x0001-001.json").getPath());
+                readSamples(ServerTest.class.getResource("example.json").getPath());
 
         // Match full sequence of samples
         MatcherKState state = matcher.mmatch(samples, 1, 500);
@@ -76,7 +77,7 @@ public class MatcherExample {
     @Test
     public void online() throws IOException, JSONException {
         // Load and construct road map
-        RoadMap map = Loader.roadmap("config/oberbayern.properties", true).construct();
+        RoadMap map = Loader.roadmap("config/xiamen.properties", true).construct();
 
         // Instantiate matcher and state data structure
         Matcher matcher = new Matcher(map, new Dijkstra<Road, RoadPoint>(), new TimePriority(),
@@ -84,7 +85,7 @@ public class MatcherExample {
 
         // Input as sample batch (offline) or sample stream (online)
         List<MatcherSample> samples =
-                readSamples(ServerTest.class.getResource("x0001-001.json").getPath());
+                readSamples(ServerTest.class.getResource("example.json").getPath());
 
         // Create initial (empty) state memory
         MatcherKState state = new MatcherKState();
@@ -96,9 +97,12 @@ public class MatcherExample {
             // Access map matching result (estimate for most recent sample)
             MatcherCandidate estimate = state.estimate();
             System.out.println(estimate.point().edge().base().refid()); // OSM id
-            estimate.point().edge().base().id(); // road id
+            long osmId = estimate.point().edge().base().refid();
+            long roadId = estimate.point().edge().base().id(); // road id
             estimate.point().edge().heading(); // heading
             estimate.point().geometry(); // GPS position (on the road)
+            Point roadPoint = estimate.point().geometry();
+            System.out.println(sample.id() + ", " + roadPoint.getY() + ", " + roadPoint.getX());
             if (estimate.transition() != null)
                 estimate.transition().route().geometry(); // path geometry from last matching
                                                           // candidate
